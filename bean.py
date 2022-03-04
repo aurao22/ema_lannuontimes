@@ -16,6 +16,13 @@ class Article():
         self.tags = tags
         self.resume = resume
 
+    def __str__(self):
+        journal_name = "None"
+        if self.journal is not None:
+            journal_name = self.journal.nom
+        return f"{journal_name} - {self.titre} du {self.date_parution}, de {self.auteur}, TAGS : {self.tags}, {self.resume}"
+    
+
     
 class Journal():
     """_summary_

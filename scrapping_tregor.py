@@ -1,22 +1,6 @@
-from urllib import request
-import bs4
-import collections
-import numpy as np
-import pandas as pd
-from datetime import datetime
-from os import getcwd
-import re
-
+from bean import *
 from scrapping_util import *
 
-
-base_url = "https://actu.fr/le-tregor/"
-
-to_request_urls = { "actu"  : ["dernieres-actus"],
-                    "categ" : ["loisirs-culture", "societe", "economie", "faits-divers", "politique/election-presidentielle", "societe/coronavirus"]
-                    }
-
-verbose = 1
 
 def get_actu_articles_urls_liste(page, verbose=0):
     """Search all article URLs in the page
@@ -43,7 +27,7 @@ def get_actu_articles_urls_liste(page, verbose=0):
         for lien in section.findAll('a'):
             liste_urls.add(lien.get('href'))
 
-    if verbose:
+    if verbose>1:
         print(len(liste_urls), "URLs found")
     return liste_urls
 
@@ -86,12 +70,26 @@ def get_categ_articles_urls_liste(page, verbose=0):
         lien = li.find('a').get('href')
         liste_urls.add(lien)
 
-    if verbose:
-        print(len(liste_urls), "URLs found")
+    if verbose>1:
+        print("TREGOR ==>", len(liste_urls), "URLs found")
     return liste_urls
 
 
 def get_article(url, tags=None, journal=None, verbose=0):
+    """Retrieve article data
+
+    Args:
+        url (str): the article page url
+        tags (str, optional): the tags. Defaults to None.
+        journal (Journal, optional): The paper. Defaults to None.
+        verbose (int, optional): log level. Defaults to 0.
+
+    Raises:
+        AttributeError: if url is missing
+
+    Returns:
+        Article: the article
+    """
     if url is None or len(url)==0:
         raise AttributeError("URL expected")
 
@@ -136,67 +134,111 @@ def get_article(url, tags=None, journal=None, verbose=0):
         # <h2>
         for child in content_balise.findChildren():
             if "p" == child.name or "h2" == child.name:
-                lignes.append(child.get_text().strip())
+                ligne = child.get_text().strip()
+                if ligne.startswith("Cet article vous a été utile"):
+                    # Fin de l'article
+                    break
+                elif ligne.startswith("À lire aussi"):
+                    pass
+                else:
+                    lignes.append(ligne)
+                    if verbose>1:
+                        print(ligne)
+            elif "div" == child.name and "ac-article-tag" == child.get("class"):
+                if tags is None:
+                    tags = ""
+                for tag in child.findAll('a'):
+                    tags += "," + tag.get_text().strip().replace("#", "")
+                # On sort de la boucle car on est à la fin de l'article
+                break
 
     texte = " ".join(lignes)
-                    # titre, date_parution, url, auteur, texte, resume=None, journal=None, tags=None
     article = Article(titre=titre, date_parution=date_parution, url=url ,auteur=auteur, texte=texte, tags=tags, resume=resume, journal=journal)
+    if verbose:
+        print(article)
     return article
 
 
-articles_urls_to_scrapt =set()
-url_type = {}
+def load_articles(verbose = 0):
+    """Load all papers articles
 
-# Parcours de la liste des URLs
-for type_, urls_list in to_request_urls.items():
-    for end_point in urls_list:
-        liste_urls = None
-        if verbose:
-            print("Start processing : ", base_url+end_point)
-        page = get_page(base_url+end_point)
-        if "categ" in type_:
-            liste_urls = get_categ_articles_urls_liste(page, verbose=verbose)
-        elif "actu" in type_:
-            liste_urls = get_actu_articles_urls_liste(page, verbose=verbose)
+    Args:
+        verbose (int, optional): log level. Defaults to 0.
 
-        if liste_urls is not None and len(liste_urls) > 0:
+    Returns:
+        tuple(Journal, list[Article]): Papers and article list
+    """
+    
+    base_url = "https://actu.fr/le-tregor/"
+
+    to_request_urls = { "actu"  : ["dernieres-actus"],
+                        "categ" : ["loisirs-culture", "societe", "economie", "faits-divers", "politique/election-presidentielle", "societe/coronavirus"]
+                        }
+
+    articles_urls_to_scrapt =set()
+    url_type = {}
+
+    # Parcours de la liste des URLs
+    for type_, urls_list in to_request_urls.items():
+        for end_point in urls_list:
+            liste_urls = None
+            if verbose:
+                print("TREGOR ==> Start processing : ", base_url+end_point)
+            page = get_page(base_url+end_point)
             if "categ" in type_:
-                for url in liste_urls:
-                    url_type[url] = end_point
+                liste_urls = get_categ_articles_urls_liste(page, verbose=verbose)
+            elif "actu" in type_:
+                liste_urls = get_actu_articles_urls_liste(page, verbose=verbose)
 
-            if articles_urls_to_scrapt is None or len(articles_urls_to_scrapt) == 0:
-                articles_urls_to_scrapt = liste_urls
-            else:
-                if verbose:
-                    print(len(articles_urls_to_scrapt), "plus", len(liste_urls), "=", end="")
-                articles_urls_to_scrapt.union(articles_urls_to_scrapt, liste_urls) 
-                if verbose:
-                    print(len(articles_urls_to_scrapt))
+            if liste_urls is not None and len(liste_urls) > 0:
+                if "categ" in type_:
+                    for url in liste_urls:
+                        url_type[url] = end_point
 
-        if verbose:
-            print("----- processing : ", base_url+end_point, " => END => ", len(liste_urls), "URLS indentified")
+                if articles_urls_to_scrapt is None or len(articles_urls_to_scrapt) == 0:
+                    articles_urls_to_scrapt = liste_urls
+                else:
+                    if verbose:
+                        print("TREGOR ==>", len(articles_urls_to_scrapt), "plus", len(liste_urls), "=", end="")
+                    articles_urls_to_scrapt.union(articles_urls_to_scrapt, liste_urls) 
+                    if verbose:
+                        print("TREGOR ==>", len(articles_urls_to_scrapt))
 
-# A ce stade nous avons la liste des URLs à scrapper normalement
-print(len(articles_urls_to_scrapt), "à traiter au total")
+            if verbose:
+                print("TREGOR ==> ----- processing : ", base_url+end_point, " => END => ", len(liste_urls), "URLS indentified")
 
-# TODO récupérer le texte des articles
-from bean import *
+    if verbose:
+        # A ce stade nous avons la liste des URLs à scrapper normalement
+        print("TREGOR ==>", len(articles_urls_to_scrapt), "à traiter au total")
+        print("TREGOR ==> Début du scrapping des articles")
 
-tregor = Journal("Le Trégor", "H", fondateur="", site=base_url, articles_page=base_url+"dernieres-actus")
+    tregor = Journal("Le Trégor", "H", fondateur="", site=base_url, articles_page=base_url+"dernieres-actus")
 
-articles = []
+    articles = []
 
-for url in articles_urls_to_scrapt:
-    tags="Actualité"
-    try:
-        tags=url_type[url]
-    except Exception:
-        pass
-    try:
-        art = get_article(url, tags=tags, journal=tregor, verbose=verbose)
-    except Exception as error:
-        print("ERROR : ", error)
+    for url in articles_urls_to_scrapt:
+        tags="Actualité"
+        try:
+            tags=url_type[url]
+        except Exception:
+            pass
+        try:
+            art = get_article(url, tags=tags, journal=tregor, verbose=verbose)
+            articles.append(art)
+        except Exception as error:
+            print("TREGOR ==> ERROR : ", error, " --------------------------- !!")
+    if verbose:
+        print("TREGOR ==>", len(articles), "articles chargés")
+    return tregor, articles
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#                                              TESTS
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+if __name__ == "__main__":
+    tregor, articles = load_articles(verbose=1)
+    print("END")
 
             
 

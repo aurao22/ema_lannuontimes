@@ -36,24 +36,6 @@ def load_articles(verbose = 0):
     Args:
         verbose (int, optional): log level. Defaults to 0.
     """
-    if verbose:
-        print("TREGOR ==> Début du scrapping des articles...")
-    
-    articles = tregor.get_articles(verbose=verbose)
-    res = save_articles_in_bdd(journal="TREGOR", articles=articles, verbose=verbose)
-    # TODO Erwan : ajouter chargement des articles ELLE
-    # TODO Mehdi : ajouter chargement des articles actugaming
-
-def save_articles_in_bdd(journal, articles, verbose = 0):
-    """Save articles in BDD
-
-    Args:
-        journal (str) : journal name
-        articles (list(dict)) : article list
-        verbose (int, optional): log level. Defaults to 0.
-    Return :
-        int : nb added articles
-    """
     # Récupère le répertoire du programme
     curent_path = getcwd()+ "\\PROJETS\\ema_lannuontimes\\"
     if verbose:
@@ -69,7 +51,33 @@ def save_articles_in_bdd(journal, articles, verbose = 0):
     # Initialisation de la BDD
     dao.initialiser_bdd(drop_if_exist=False, verbose=verbose)
 
-    if articles is not None:
+    ever_save = dao.get_articles_url(journal="Le Trégor")
+
+    if verbose:
+        print("TREGOR ==> Début du scrapping des articles...")
+    
+    articles = tregor.get_articles(exclude=ever_save,verbose=verbose)
+    if articles is not None and len(articles)>0:
+        res = save_articles_in_bdd(dao=dao, journal="TREGOR", articles=articles, verbose=verbose)
+    else:
+        print("TREGOR ==> Aucun nouvel article...")
+    
+    # TODO Erwan : ajouter chargement des articles ELLE
+    # TODO Mehdi : ajouter chargement des articles actugaming
+
+def save_articles_in_bdd(dao, journal, articles, verbose = 0):
+    """
+    Save articles in BDD
+    Args:
+        dao (_type_): _description_
+        journal (str) : journal name
+        articles (list(dict)) : article list
+        verbose (int, optional): log level. Defaults to 0.
+
+    Returns:
+        int : nb added articles
+    """  
+    if articles is not None and dao is not None:
         if verbose :
             print(f"{journal} ==> {len(articles)} récupérés....")
         nb_added_art = 0

@@ -119,6 +119,7 @@ def get_article(url, tags=None, journal=None, verbose=0):
         else:
             date_parution = parutions[0].split("\n")[0]
         date_parution = date_parution.strip()
+
         # Libération des variables
         parution=None
         parutions = None
@@ -153,14 +154,14 @@ def get_article(url, tags=None, journal=None, verbose=0):
                 break
 
     texte = " ".join(lignes)
-    article = Article(titre=titre, date_parution=date_parution, url=url ,auteur=auteur, texte=texte, tags=tags, resume=resume, journal=journal)
+    article = {'titre':titre, 'date_parution':date_parution, 'url':url ,'auteur':auteur, 'texte':texte, 'tags':tags, 'journal':journal}
     if verbose:
         print(article)
     return article
 
 
-def load_articles(verbose = 0):
-    """Load all papers articles
+def get_url_to_scrapt(verbose = 0):
+    """Return the url liste to scrapt
 
     Args:
         verbose (int, optional): log level. Defaults to 0.
@@ -168,11 +169,10 @@ def load_articles(verbose = 0):
     Returns:
         tuple(Journal, list[Article]): Papers and article list
     """
-    
     base_url = "https://actu.fr/le-tregor/"
 
     to_request_urls = { "actu"  : ["dernieres-actus"],
-                        "categ" : ["loisirs-culture", "societe", "economie", "faits-divers", "politique/election-presidentielle", "societe/coronavirus"]
+                        "categ" : ["societe", "economie", "faits-divers", "politique/election-presidentielle", "societe/coronavirus"]
                         }
 
     articles_urls_to_scrapt =set()
@@ -181,38 +181,54 @@ def load_articles(verbose = 0):
     # Parcours de la liste des URLs
     for type_, urls_list in to_request_urls.items():
         for end_point in urls_list:
-            liste_urls = None
-            if verbose:
-                print("TREGOR ==> Start processing : ", base_url+end_point)
-            page = get_page(base_url+end_point)
-            if "categ" in type_:
-                liste_urls = get_categ_articles_urls_liste(page, verbose=verbose)
-            elif "actu" in type_:
-                liste_urls = get_actu_articles_urls_liste(page, verbose=verbose)
-
-            if liste_urls is not None and len(liste_urls) > 0:
+            try:
+                liste_urls = None
+                if verbose:
+                    print("TREGOR ==> Start processing : ", base_url+end_point)
+                page = get_page(base_url+end_point)
                 if "categ" in type_:
-                    for url in liste_urls:
-                        url_type[url] = end_point
+                    liste_urls = get_categ_articles_urls_liste(page, verbose=verbose)
+                elif "actu" in type_:
+                    liste_urls = get_actu_articles_urls_liste(page, verbose=verbose)
 
-                if articles_urls_to_scrapt is None or len(articles_urls_to_scrapt) == 0:
-                    articles_urls_to_scrapt = liste_urls
-                else:
-                    if verbose:
-                        print("TREGOR ==>", len(articles_urls_to_scrapt), "plus", len(liste_urls), "=", end="")
-                    articles_urls_to_scrapt.union(articles_urls_to_scrapt, liste_urls) 
-                    if verbose:
-                        print("TREGOR ==>", len(articles_urls_to_scrapt))
+                if liste_urls is not None and len(liste_urls) > 0:
+                    if "categ" in type_:
+                        for url in liste_urls:
+                            url_type[url] = end_point
 
-            if verbose:
-                print("TREGOR ==> ----- processing : ", base_url+end_point, " => END => ", len(liste_urls), "URLS indentified")
+                    if articles_urls_to_scrapt is None or len(articles_urls_to_scrapt) == 0:
+                        articles_urls_to_scrapt = liste_urls
+                    else:
+                        if verbose:
+                            print("TREGOR ==>", len(articles_urls_to_scrapt), "plus", len(liste_urls), "=", end="")
+                        articles_urls_to_scrapt.union(articles_urls_to_scrapt, liste_urls) 
+                        if verbose:
+                            print("TREGOR ==>", len(articles_urls_to_scrapt))
+                if verbose:
+                    print("TREGOR ==> ----- processing : ", base_url+end_point, " => END => ", len(liste_urls), "URLS indentified")
+            except Exception as error:
+                print(f"TREGOR ==> ERROR while processing {base_url+end_point}")
 
     if verbose:
         # A ce stade nous avons la liste des URLs à scrapper normalement
         print("TREGOR ==>", len(articles_urls_to_scrapt), "à traiter au total")
-        print("TREGOR ==> Début du scrapping des articles")
+    
+    return articles_urls_to_scrapt, url_type
 
-    tregor = Journal("Le Trégor", "H", fondateur="", site=base_url, articles_page=base_url+"dernieres-actus")
+
+def get_articles(journal="Le Trégor", verbose = 0):
+    """retournes tous articles
+
+    Args:
+        verbose (int, optional): log level. Defaults to 0.
+
+    Returns:
+        list(dict): Papers and article list
+    """
+    articles_urls_to_scrapt, url_type = get_url_to_scrapt(verbose=verbose)
+    
+    if verbose:
+        print("TREGOR ==> Début du scrapping des articles")
 
     articles = []
 
@@ -223,21 +239,25 @@ def load_articles(verbose = 0):
         except Exception:
             pass
         try:
-            art = get_article(url, tags=tags, journal=tregor, verbose=verbose)
+            art = get_article(url, tags=tags, journal=journal, verbose=verbose)
             articles.append(art)
         except Exception as error:
             print("TREGOR ==> ERROR : ", error, " --------------------------- !!")
     if verbose:
-        print("TREGOR ==>", len(articles), "articles chargés")
-    return tregor, articles
-
+        print("TREGOR ==>", len(articles), "articles")
+    return articles
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                                              TESTS
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 if __name__ == "__main__":
-    tregor, articles = load_articles(verbose=1)
+
+    art = get_article(url="https://actu.fr/bretagne/prat_22254/autour-de-lannion-six-mois-pour-restaurer-un-tableau-de-1665_49195449.html")
+
+    art = get_article(url="https://actu.fr/bretagne/locquirec_29133/locquirec-la-vigne-va-fleurir-a-lile-blanche_49195371.html")
+
+    articles = get_articles(verbose=1)
     print("END")
 
             

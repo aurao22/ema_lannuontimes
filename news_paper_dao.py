@@ -86,7 +86,7 @@ class NewsPaperDao():
         """
         sql = "SELECT count(*) FROM `article`"
         if journal is not None:
-            sql = f"{sql} WHERE `journal`='{journal.lower()}'"
+            sql = f"{sql} WHERE `journal`='{journal}'"
         res = self._executer_sql(sql+";", verbose=verbose)
         
         if verbose:
@@ -161,25 +161,43 @@ class NewsPaperDao():
         res = None
         if titre is not None and date_parution is not None and texte is not None and journal is not None:
 
-
-            sql_start = f"`id`,`titre`,`date_parution`, `texte`, `journal`"
-            sql_end = "NULL, '{titre}', '{date_parution}', '{texte}', '{journal}');"
-
-            if auteur is not None and len(auteur>0):
-                sql_start += ", `auteur`"
-                sql_end += f", '{auteur}'"
-
-            if url is not None and len(url>0):
-                sql_start += ", `url`"
-                sql_end += f", '{url}'"
-
-            if tags is not None and len(tags>0):
-                sql_start += ", `tags`"
-                sql_end += f", '{tags}'"
-
-            sql = "INSERT INTO `article` (" + sql_start +")  VALUES ("+ sql_end+");"
-
+            # pre-traitement
+            titre = _sql_str_preprocess(titre)
+            date_parution = _sql_str_preprocess(date_parution)
+            journal = _sql_str_preprocess(journal)
+            texte = _sql_str_preprocess(texte)
+            
+            # On vérifie si l'article n'existe pas déjà
+            sql = f'SELECT count(`id`) FROM `article` WHERE `titre`="{titre}" AND `date_parution`="{date_parution}" AND `journal`="{journal}"'
+            if verbose:
+                print(sql)
             res = self._executer_sql(sql, verbose=verbose)
+            exist = res[0][0] > 0
+
+            if not exist:
+                sql_start = "`id`,`titre`,`date_parution`, `texte`, `journal`"
+                sql_end = f'NULL, "{titre}", "{date_parution}","{texte}", "{journal}"'
+
+                if auteur is not None and len(auteur)>0:
+                    sql_start += ", `auteur`"
+                    auteur = _sql_str_preprocess(auteur)
+                    sql_end += f', "{auteur}"'
+
+                if url is not None and len(url)>0:
+                    sql_start += ", `url`"
+                    url = _sql_str_preprocess(url)
+                    sql_end += f', "{url}"'
+
+                if tags is not None and len(tags)>0:
+                    sql_start += ", `tags`"
+                    tags = _sql_str_preprocess(tags)
+                    sql_end += f', "{tags}"'
+
+                sql = 'INSERT INTO `article` (' + sql_start +')  VALUES ('+ sql_end+');'
+
+                res = self._executer_sql(sql, verbose=verbose)
+            else:
+                return False
             
         else:
             raise ValueError(f"titre, date_parution, texte and journal ar mandatory, receive : {titre}, {date_parution}, {texte} and {journal}")
@@ -332,10 +350,10 @@ class NewsPaperDao():
                 if verbose:
                     print(" =>",res)
             except sqlite3.Error as error:
-                print("SQLite > Erreur exécution SQL", error)
+                print("\nSQLite > Erreur exécution SQL:", sql, "\n", error)
                 raise error
         except sqlite3.Error as error:
-            print("SQLite > Erreur de connexion à la BDD", error)
+            print("SQLite > Erreur de connexion à la BDD", sql, "\n", error)
             raise error
         finally:
             try:
@@ -356,6 +374,11 @@ class NewsPaperDao():
 #                                              TESTS
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+def _sql_str_preprocess(txt):
+    txt = txt.replace("'", "\\'")
+    txt = txt.replace('"', "\\'\\'")
+    return txt
+
 def _remove_file(file_path):
     try:
         if path.exists(file_path):
@@ -367,6 +390,11 @@ def _remove_file(file_path):
 if __name__ == "__main__":
 
     verbose = 1
+
+    txt = 'Lannion. Léa Poplin, nouvelle sous-préfète : "Je suis là pour faire avancer les dossiers"'
+    print(txt)
+    print(_sql_str_preprocess(txt))
+
     # Récupère le répertoire du programme
     curent_path = getcwd()+ "\\PROJETS\\ema_lannuontimes\\"
     print(curent_path)

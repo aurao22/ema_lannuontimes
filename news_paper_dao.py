@@ -204,20 +204,42 @@ class NewsPaperDao():
         return res
 
     def articles(self, journal=None, verbose=0):
-        """Retourne la liste des stations en BDD
+        """_summary_
 
         Args:
-            verbose (bool/int, optional): Niveau de détail pour les traces. Defaults to False
+            journal (_type_, optional): _description_. Defaults to None.
+            verbose (int, optional): _description_. Defaults to 0.
 
         Returns:
-            List[Station]: Retourne la liste des stations en BDD
+            _type_: _description_
         """
-        sql = "SELECT * FROM `article` ORDER BY id"
+        sql = "SELECT * FROM `article` "
         if journal is not None and len(journal)>0:
             sql += f" WHERE `journal` = '{journal}'"
 
-        res = self._executer_sql(sql+";", verbose=verbose)
+        res = self._executer_sql(sql+" ORDER BY id;", verbose=verbose)
         return res
+
+    def get_articles_url(self, journal=None, verbose=0):
+        """_summary_
+
+        Args:
+            journal (_type_, optional): _description_. Defaults to None.
+            verbose (int, optional): _description_. Defaults to 0.
+
+        Returns:
+            _type_: _description_
+        """
+        sql = "SELECT distinct(`url`) FROM `article` "
+        if journal is not None and len(journal)>0:
+            sql += f" WHERE `journal` = '{journal}'"
+
+        res = self._executer_sql(sql+"ORDER BY id ;", verbose=verbose)
+        url_list = []
+        if res is not None and isinstance(res, list):
+            for tu in res:
+                url_list.append(tu[0])
+        return url_list
    
 
     def initialiser_bdd(self, drop_if_exist = False, verbose=False):
@@ -390,6 +412,7 @@ def _remove_file(file_path):
 if __name__ == "__main__":
 
     verbose = 1
+
 
     txt = 'Lannion. Léa Poplin, nouvelle sous-préfète : "Je suis là pour faire avancer les dossiers"'
     print(txt)

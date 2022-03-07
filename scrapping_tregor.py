@@ -31,6 +31,36 @@ def get_actu_articles_urls_liste(page, verbose=0):
         print(len(liste_urls), "URLs found")
     return liste_urls
 
+def get_top_articles_urls_liste(page, verbose=0):
+    """Search all article URLs in the page
+
+    Args:
+        page (BeautifulSoup): _description_
+        verbose (int, optional): log level. Defaults to 0.
+
+    Raises:
+        AttributeError: if page is missing
+
+    Returns:
+        list(str): list of Articles page URL
+    """
+    if page is None:
+        raise AttributeError("page expected")
+
+    # récupérer la liste des noms de pokémon
+    liste_urls =set()
+
+    # traitement de la première partie : les articles à la une
+    # <article class="ac-preview-article ac-preview-last-news"> <a href
+    for section in page.findAll('div', {'class': "ac-list-preview-articles ac-list-preview-articles--noborder"}):
+        for lien in section.findAll('a'):
+            liste_urls.add(lien.get('href'))
+
+    if verbose>1:
+        print(len(liste_urls), "URLs found")
+    return liste_urls
+
+
 
 def get_categ_articles_urls_liste(page, verbose=0):
     """Search all article URLs in the page
@@ -169,27 +199,38 @@ def get_url_to_scrapt(verbose = 0):
     Returns:
         tuple(Journal, list[Article]): Papers and article list
     """
-    base_url = "https://actu.fr/le-tregor/"
+    base_url = "https://actu.fr/"
 
     to_request_urls = { "actu"  : ["dernieres-actus"],
                         "categ" : ["societe", "economie", "faits-divers", "politique/election-presidentielle", "societe/coronavirus"]
+                        #"top" : ["https://actu.fr/bretagne/top", "https://actu.fr/normandie/top", "https://actu.fr/pays-de-la-loire/top", "https://actu.fr/ile-de-france/top", "https://actu.fr/occitanie/top", "https://actu.fr/nouvelle-aquitaine/top", "https://actu.fr/hauts-de-france/top", "https://actu.fr/grand-est/top"]
                         }
 
     articles_urls_to_scrapt =set()
     url_type = {}
-
+    
     # Parcours de la liste des URLs
     for type_, urls_list in to_request_urls.items():
         for end_point in urls_list:
             try:
                 liste_urls = None
+                
+                target = base_url
+                if target not in end_point:
+                    target += "le-tregor/"+end_point
+                else:
+                    target = end_point
+                
                 if verbose:
-                    print("TREGOR ==> Start processing : ", base_url+end_point)
-                page = get_page(base_url+end_point)
+                    print("TREGOR ==> Start processing : ", target)
+
+                page = get_page(target)
                 if "categ" in type_:
                     liste_urls = get_categ_articles_urls_liste(page, verbose=verbose)
                 elif "actu" in type_:
                     liste_urls = get_actu_articles_urls_liste(page, verbose=verbose)
+                elif "top" in type_:
+                    liste_urls = get_top_articles_urls_liste(page, verbose=verbose)
 
                 if liste_urls is not None and len(liste_urls) > 0:
                     if "categ" in type_:
@@ -205,9 +246,10 @@ def get_url_to_scrapt(verbose = 0):
                         if verbose:
                             print("TREGOR ==>", len(articles_urls_to_scrapt))
                 if verbose:
-                    print("TREGOR ==> ----- processing : ", base_url+end_point, " => END => ", len(liste_urls), "URLS indentified")
+                    print("TREGOR ==> ----- processing : ", target, " => END => ", len(liste_urls), "URLS indentified")
             except Exception as error:
-                print(f"TREGOR ==> ERROR while processing {base_url+end_point}")
+                print(f"TREGOR ==> ERROR while processing {target}")
+                print(error)
 
     if verbose:
         # A ce stade nous avons la liste des URLs à scrapper normalement
@@ -216,10 +258,11 @@ def get_url_to_scrapt(verbose = 0):
     return articles_urls_to_scrapt, url_type
 
 
-def get_articles(journal="Le Trégor", verbose = 0):
+def get_articles(exclude=None, journal="Le Trégor", verbose = 0):
     """retournes tous articles
 
     Args:
+        exclude
         verbose (int, optional): log level. Defaults to 0.
 
     Returns:
@@ -231,20 +274,27 @@ def get_articles(journal="Le Trégor", verbose = 0):
         print("TREGOR ==> Début du scrapping des articles")
 
     articles = []
-
+    if exclude is None:
+        exclude = []
+    excluded = 0
     for url in articles_urls_to_scrapt:
-        tags="Actualité"
-        try:
-            tags=url_type[url]
-        except Exception:
-            pass
-        try:
-            art = get_article(url, tags=tags, journal=journal, verbose=verbose)
-            articles.append(art)
-        except Exception as error:
-            print("TREGOR ==> ERROR : ", error, " --------------------------- !!")
+
+        if url not in exclude:
+            tags="Actualité"
+            try:
+                tags=url_type[url]
+            except Exception:
+                pass
+            try:
+
+                art = get_article(url, tags=tags, journal=journal, verbose=verbose)
+                articles.append(art)
+            except Exception as error:
+                print("TREGOR ==> ERROR : ", error, " --------------------------- !!")
+        else:
+            excluded += 1
     if verbose:
-        print("TREGOR ==>", len(articles), "articles")
+        print(f"TREGOR ==> {len(articles)} articles and {excluded} exculded arcticles")
     return articles
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                                              TESTS

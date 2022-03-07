@@ -1,4 +1,3 @@
-from bean import *
 from scrapping_util import *
 
 

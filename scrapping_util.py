@@ -1,12 +1,13 @@
 from urllib import request
 import bs4
-from mysqlx import DatabaseError
 import scrapping_tregor as tregor
 import news_paper_dao as np_dao
-from os import getcwd
+from selenium import webdriver
+import time
+from os import getcwd, environ
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#                                              COMMON
+#                                              COMMON SCRAPPING
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 def get_page(url, verbose=0):
@@ -26,6 +27,29 @@ def get_page(url, verbose=0):
     return bs4.BeautifulSoup(html, "lxml")
 
 
+def get_selenium_firefox_driver(url, gecko_driver_path=None, verbose=0):
+    """Create and return the firefox driver for selenium
+
+    Args:
+        url (str): URL to load
+        gecko_driver_path (str, optional): the path to the gecko_driver. Defaults to None, so use the environnement variable : `GECKO_DRIVER_PATH`.
+        verbose (int, optional): log level. Defaults to 0.
+
+    Returns:
+        WebDriver: firefox webdriver
+    """
+    if gecko_driver_path is None:
+        if verbose:
+            print('get_selenium_driver > No Gecko driver path, so use the environnement variable : `GECKO_DRIVER_PATH`')
+        gecko_driver_path = environ.get('GECKO_DRIVER_PATH')
+        if gecko_driver_path is None:
+            raise Exception("No `GECKO_DRIVER_PATH` environment varibale define. This variable is mandatory to use selenium on firefox")
+    driver = webdriver.Firefox(executable_path=gecko_driver_path)
+    driver.get(url)
+    time.sleep(5)
+    return driver
+    
+    
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                                              CHARGEMENT INITIAL
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -46,7 +70,7 @@ def load_articles(verbose = 0):
 
     dao = np_dao.NewsPaperDao(nom_bdd=curent_path+"em_bdd.db")
     if not dao.test_connexion():
-        raise DatabaseError("Impossible de se connecter à la BDD")
+        raise Exception("Impossible de se connecter à la BDD")
     elif verbose:
         print("...... TERMINE")
     

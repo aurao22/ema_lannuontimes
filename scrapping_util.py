@@ -37,7 +37,9 @@ def load_articles(verbose = 0):
         verbose (int, optional): log level. Defaults to 0.
     """
     # Récupère le répertoire du programme
-    curent_path = getcwd()+ "\\PROJETS\\ema_lannuontimes\\"
+    curent_path = getcwd() +"\\"
+    if "ema_lannuontimes" not in curent_path:
+        curent_path = getcwd()+ "PROJETS\\ema_lannuontimes\\"
     if verbose:
         print(curent_path)
         print("Intialisation de la BDD...", end="")

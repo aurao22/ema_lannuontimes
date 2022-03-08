@@ -128,3 +128,4 @@ dmypy.json
 # Pyre type checker
 .pyre/
 gestion_projet/.~lock.*.odt#
+*.exe

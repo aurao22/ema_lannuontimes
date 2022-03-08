@@ -392,14 +392,15 @@ class NewsPaperDao():
                 pass       
         return res
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#                                              TESTS
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 def _sql_str_preprocess(txt):
     txt = txt.replace("'", "\\'")
     txt = txt.replace('"', "\\'\\'")
     return txt
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#                                              TESTS
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 def _remove_file(file_path):
     try:
@@ -415,11 +416,17 @@ if __name__ == "__main__":
 
 
     txt = 'Lannion. Léa Poplin, nouvelle sous-préfète : "Je suis là pour faire avancer les dossiers"'
-    print(txt)
-    print(_sql_str_preprocess(txt))
+    res = _sql_str_preprocess(txt)
+    if verbose:
+        print(txt)
+        print(res)
+
+    assert res == "Lannion. Léa Poplin, nouvelle sous-préfète : \\'\\'Je suis là pour faire avancer les dossiers\\'\\'"
 
     # Récupère le répertoire du programme
-    curent_path = getcwd()+ "\\PROJETS\\ema_lannuontimes\\"
+    curent_path = getcwd()+ "\\"
+    if "ema_lannuontimes" not in curent_path:
+        curent_path += "PROJETS\\ema_lannuontimes\\"
     print(curent_path)
 
     test_file_bdd = curent_path+'bdd_test.db'
@@ -429,6 +436,8 @@ if __name__ == "__main__":
     _remove_file(test_file_bdd)
 
     ma_dao = NewsPaperDao(test_file_bdd)
+    ma_dao.initialiser_bdd(drop_if_exist=True)
+
     assert ma_dao.test_connexion(verbose=verbose)
     # Création avec une BDD vide
     assert ma_dao.initialiser_bdd(verbose=verbose)

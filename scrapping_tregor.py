@@ -23,9 +23,8 @@ def get_actu_articles_urls_liste(page, verbose=0):
     # traitement de la première partie : les articles à la une
     # <article class="ac-preview-article ac-preview-last-news"> <a href
     for section in page.findAll('article', {'class': 'ac-preview-article ac-preview-last-news'}):
-        for lien in section.findAll('a'):
-            liste_urls.add(lien.get('href'))
-
+        liste_urls = get_page_links(section, liste_urls=liste_urls)
+        
     if verbose>1:
         print(len(liste_urls), "URLs found")
     return liste_urls
@@ -52,13 +51,11 @@ def get_top_articles_urls_liste(page, verbose=0):
     # traitement de la première partie : les articles à la une
     # <article class="ac-preview-article ac-preview-last-news"> <a href
     for section in page.findAll('div', {'class': "ac-list-preview-articles ac-list-preview-articles--noborder"}):
-        for lien in section.findAll('a'):
-            liste_urls.add(lien.get('href'))
-
+        liste_urls = get_page_links(section, liste_urls=liste_urls)
+        
     if verbose>1:
         print(len(liste_urls), "URLs found")
     return liste_urls
-
 
 
 def get_categ_articles_urls_liste(page, verbose=0):
@@ -77,7 +74,7 @@ def get_categ_articles_urls_liste(page, verbose=0):
     if page is None:
         raise AttributeError("page expected")
 
-    # récupérer la liste des noms de pokémon
+    # récupérer la liste
     liste_urls =set()
 
     # traitement de la première partie : les articles à la une
@@ -87,17 +84,14 @@ def get_categ_articles_urls_liste(page, verbose=0):
     #   <ul
     #       <li class="ac-preview-article ac-preview-article-small"
     for section in page.findAll('section', {'class': 'ac-grid-preview-home'}):
-        for a in section.findAll('a'):
-            lien = a.get('href')
-            liste_urls.add(lien)
-
+        liste_urls = get_page_links(section, liste_urls=liste_urls)
+        
     # Traitement de la liste d'articles :
     # <div class="ac-list-preview-articles  "
     # <li class="ac-preview-article ac-preview-article-medium"
         # <a href
     for li in page.findAll('li', {'class': 'ac-preview-article ac-preview-article-medium'}):
-        lien = li.find('a').get('href')
-        liste_urls.add(lien)
+        liste_urls = get_page_links(li, liste_urls=liste_urls)
 
     if verbose>1:
         print("TREGOR ==>", len(liste_urls), "URLs found")

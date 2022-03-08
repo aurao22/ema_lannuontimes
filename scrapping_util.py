@@ -9,7 +9,6 @@ from os import getcwd, environ
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                                              COMMON SCRAPPING
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 def get_page(url, verbose=0):
     """Retrieve the HTML page
 
@@ -26,6 +25,43 @@ def get_page(url, verbose=0):
     html = request.urlopen(req).read()
     return bs4.BeautifulSoup(html, "lxml")
 
+def get_page_links(page, base_url="", class_=None, liste_urls=None, verbose=0):
+    """Return all page or section links
+    Args:
+        page (BeautifulSoup): the page or the section of the page
+        base_url (str, optional): the url base. Defaults to "".
+        class_ (str, optional): The link class. Defaults to None.
+        liste_urls (set(str), optional): The url list to complete. Defaults to None.
+        verbose (int, optional): log level. Defaults to 0.
+
+    Raises:
+        AttributeError: if page is None
+
+    Returns:
+        set(str): link list
+    """
+    if page is None:
+        raise AttributeError("page expected")
+    
+    if liste_urls is None:
+        liste_urls =set()
+    nb_url_start = len(liste_urls)
+    liens_list = page.findAll('a')
+    if class_ is None:
+        liens_list = page.findAll('a')
+    else:
+        liens_list = page.findAll('a', {'class': class_})
+    
+    # Récupération de tous les liens de la page
+    for lien in liens_list:
+        link = lien.get('href')
+        if base_url is not None and len(base_url) >0 and base_url not in link:
+            link = base_url+link
+        liste_urls.add(link)
+    
+    if verbose>1:
+        print(len(liste_urls)-nb_url_start, " URLs found")
+    return liste_urls
 
 def get_selenium_firefox_driver(url, gecko_driver_path=None, verbose=0):
     """Create and return the firefox driver for selenium

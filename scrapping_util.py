@@ -49,7 +49,7 @@ def get_selenium_firefox_driver(url, gecko_driver_path=None, verbose=0):
     time.sleep(5)
     return driver
     
-    
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                                              CHARGEMENT INITIAL
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -63,7 +63,7 @@ def load_articles(verbose = 0):
     # Récupère le répertoire du programme
     curent_path = getcwd() +"\\"
     if "ema_lannuontimes" not in curent_path:
-        curent_path = getcwd()+ "PROJETS\\ema_lannuontimes\\"
+        curent_path += "PROJETS\\ema_lannuontimes\\"
     if verbose:
         print(curent_path)
         print("Intialisation de la BDD...", end="")

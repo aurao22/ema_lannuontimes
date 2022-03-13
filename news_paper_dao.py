@@ -138,7 +138,7 @@ class NewsPaperDao():
             raise ValueError(f"Attendu nom journal str, reçu {nom}")
         return res
 
-    def ajouter_article(self, titre, date_parution, texte, journal, auteur=None, url=None, tags=None, verbose=0):
+    def ajouter_article(self, titre, date_parution, texte, journal,url, auteur=None,  tags=None, verbose=0):
         """Ajoute un article
 
         Args:
@@ -159,34 +159,30 @@ class NewsPaperDao():
             int: identifiant de l'article ajouté
         """   
         res = None
-        if titre is not None and date_parution is not None and texte is not None and journal is not None:
+        if titre is not None and date_parution is not None and texte is not None and journal is not None and url is not None:
 
             # pre-traitement
             titre = _sql_str_preprocess(titre)
             date_parution = _sql_str_preprocess(date_parution)
             journal = _sql_str_preprocess(journal)
             texte = _sql_str_preprocess(texte)
-            
+            url = _sql_str_preprocess(url)
+
             # On vérifie si l'article n'existe pas déjà
-            sql = f'SELECT count(`id`) FROM `article` WHERE `titre`="{titre}" AND `date_parution`="{date_parution}" AND `journal`="{journal}"'
+            sql = f'SELECT count(*) FROM `article` WHERE `url`="{url}"'
             if verbose:
                 print(sql)
             res = self._executer_sql(sql, verbose=verbose)
             exist = res[0][0] > 0
 
             if not exist:
-                sql_start = "`id`,`titre`,`date_parution`, `texte`, `journal`"
-                sql_end = f'NULL, "{titre}", "{date_parution}","{texte}", "{journal}"'
+                sql_start = "`url`,`titre`,`date_parution`, `texte`, `journal`"
+                sql_end = f'"{url}", "{titre}", "{date_parution}","{texte}", "{journal}"'
 
                 if auteur is not None and len(auteur)>0:
                     sql_start += ", `auteur`"
                     auteur = _sql_str_preprocess(auteur)
                     sql_end += f', "{auteur}"'
-
-                if url is not None and len(url)>0:
-                    sql_start += ", `url`"
-                    url = _sql_str_preprocess(url)
-                    sql_end += f', "{url}"'
 
                 if tags is not None and len(tags)>0:
                     sql_start += ", `tags`"
@@ -200,7 +196,7 @@ class NewsPaperDao():
                 return False
             
         else:
-            raise ValueError(f"titre, date_parution, texte and journal ar mandatory, receive : {titre}, {date_parution}, {texte} and {journal}")
+            raise ValueError(f"titre, date_parution, texte, journal and url ar mandatory, receive : {titre}, {date_parution}, {texte}, {journal}, and {url}")
         return res
 
     def articles(self, journal=None, verbose=0):
@@ -217,7 +213,7 @@ class NewsPaperDao():
         if journal is not None and len(journal)>0:
             sql += f" WHERE `journal` = '{journal}'"
 
-        res = self._executer_sql(sql+" ORDER BY id;", verbose=verbose)
+        res = self._executer_sql(sql+" ;", verbose=verbose)
         return res
 
     def get_articles_url(self, journal=None, verbose=0):
@@ -232,9 +228,10 @@ class NewsPaperDao():
         """
         sql = "SELECT distinct(`url`) FROM `article` "
         if journal is not None and len(journal)>0:
-            sql += f" WHERE `journal` = '{journal}'"
+            journal = journal.replace("'", "\\'")
+            sql += f' WHERE `journal` = "{journal}"'
 
-        res = self._executer_sql(sql+"ORDER BY id ;", verbose=verbose)
+        res = self._executer_sql(sql+" ;", verbose=verbose)
         url_list = []
         if res is not None and isinstance(res, list):
             for tu in res:
@@ -328,7 +325,8 @@ class NewsPaperDao():
         sql ="""INSERT OR IGNORE INTO journal(nom,fondateur,frequence,site_web,url_articles) VALUES 
         ('Le Trégor','Stéphane Le Tyrant','hebdomadaire','https://actu.fr/le-tregor/','https://actu.fr/le-tregor/dernieres-actus'),
         ('ActuGaming','Julien Blary','aleatoire', 'https://www.actugaming.net/','https://www.actugaming.net/actualites/'),
-        ('Elle','Hélène Lazareff','aleatoire','https://www.elle.fr/','https://www.elle.fr/actu/fil-info/People');
+        ('Elle','Hélène Lazareff','aleatoire','https://www.elle.fr/','https://www.elle.fr/actu/fil-info/People'),
+        ("30 M. d\\'amis",'Reha Hutin','aleatoire','https://www.30millionsdamis.fr','https://www.30millionsdamis.fr/actualites/');
         """
         res = self._executer_sql(sql, verbose=verbose)
         return res
@@ -336,13 +334,12 @@ class NewsPaperDao():
     def _creer_table_article(self, verbose=False):
         sql = """
         CREATE TABLE IF NOT EXISTS `article`(  
-                `id` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                `url` TEXT NOT NULL PRIMARY KEY,
                 `titre` TEXT NOT NULL,
                 `date_parution` TEXT NOT NULL,
                 `texte` TEXT NOT NULL,
                 `auteur` TEXT,
                 `tags` TEXT,
-                `url` TEXT,
                 `journal` TEXT NOT NULL,
                 FOREIGN KEY(`journal`) references journal(`nom`)
             );

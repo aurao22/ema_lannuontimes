@@ -1,4 +1,4 @@
-from scrapping_util import *
+from scrapping_util import get_page, get_page_links
 
 
 def get_actu_articles_urls_liste(page, verbose=0):

@@ -116,7 +116,7 @@ def _load_30_m_amis(dao, verbose=0):
         print("30 M. d'AMIS ==> Début du scrapping des articles...")
     
     ever_save = dao.get_articles_url(journal="30 M. d'amis")
-    articles = amis30.get_articles(exclude=ever_save,nb_page_to_proceed = 10,verbose=verbose)
+    articles = amis30.get_articles(exclude=ever_save,nb_page_to_proceed = 20,verbose=verbose)
     if articles is not None and len(articles)>0:
         res = save_articles_in_bdd(dao=dao, journal="30 M. d'amis", articles=articles, verbose=verbose)
     else:
@@ -127,5 +127,5 @@ def _load_30_m_amis(dao, verbose=0):
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 if __name__ == "__main__":
     verbose = 1
-    # load_articles(papers=["Le Trégor", "30 M. d'AMIS"],verbose=verbose)
-    load_articles(papers=["30 M. d'AMIS"],verbose=verbose)
+    load_articles(papers=["Le Trégor", "30 M. d'AMIS"],verbose=verbose)
+    # load_articles(papers=["30 M. d'AMIS"],verbose=verbose)

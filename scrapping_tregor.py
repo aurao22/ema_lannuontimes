@@ -1,4 +1,4 @@
-from scrapping_util import get_page, get_page_links
+from scrapping_util import get_page, get_page_links, save_article_in_bdd
 
 
 def get_actu_articles_urls_liste(page, verbose=0):
@@ -251,7 +251,7 @@ def get_url_to_scrapt(verbose = 0):
     return articles_urls_to_scrapt, url_type
 
 
-def get_articles(exclude=None, journal="Le Trégor", verbose = 0):
+def get_articles(dao=None, nb_articles=100, exclude=None, journal="Le Trégor", verbose = 0):
     """retournes tous articles
 
     Args:
@@ -281,6 +281,11 @@ def get_articles(exclude=None, journal="Le Trégor", verbose = 0):
             try:
 
                 art = get_article(url, tags=tags, journal=journal, verbose=verbose)
+                if dao is not None:
+                    # Ajout de l'article en BDD
+                    added = save_article_in_bdd(dao=dao, journal=journal, art=art, verbose = verbose)
+                    if not added:
+                        print("TREGOR ==> ERROR : Article non ajouté en BDD --------------------------- !!")    
                 articles.append(art)
             except Exception as error:
                 print("TREGOR ==> ERROR : ", error, " --------------------------- !!")

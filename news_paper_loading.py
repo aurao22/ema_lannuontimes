@@ -1,5 +1,6 @@
 import scrapping_tregor as tregor
 import scrapping_30_millions_amis as amis30
+from scrapping_util import save_article_in_bdd
 import news_paper_dao as np_dao
 from os import getcwd
    
@@ -8,7 +9,7 @@ from os import getcwd
 #                                              CHARGEMENT INITIAL
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-def load_articles(papers=["Le Trégor", "30 M. d'AMIS"], verbose = 0):
+def load_articles(papers=["Le Trégor", "30 M. d'AMIS"], nb_articles=500, verbose = 0):
     """Save articles in BDD
 
     Args:
@@ -32,10 +33,10 @@ def load_articles(papers=["Le Trégor", "30 M. d'AMIS"], verbose = 0):
     dao.initialiser_bdd(drop_if_exist=False, verbose=verbose)
 
     if "Le Trégor" in papers :
-        _load_tregor(dao, verbose=verbose)
+        _load_tregor(dao, nb_articles=nb_articles, verbose=verbose)
     
     if "30 M. d'AMIS" in papers:
-        _load_30_m_amis(dao, verbose=verbose)
+        _load_30_m_amis(dao, nb_articles=nb_articles, verbose=verbose)
 
     # TODO Erwan : ajouter chargement des articles ELLE
     # TODO Mehdi : ajouter chargement des articles actugaming
@@ -57,23 +58,13 @@ def save_articles_in_bdd(dao, journal, articles, verbose = 0):
             print(f"{journal} ==> {len(articles)} récupérés....")
         nb_added_art = 0
         nb_ever_exist = 0
-        for art in articles:
-            titre=art.get("titre", None)
-            date_parution=art.get("date_parution", None)
-            texte=art.get("texte", None)
-            journal=art.get("journal", None)
-            auteur=art.get("auteur", None)
 
+        for art in articles:
+            
             # On poursuit le traitement même si l'enregistrement d'un article pose problème
             try:
-                res = dao.ajouter_article(titre=titre,
-                               date_parution=date_parution, 
-                               texte=texte, 
-                               journal=journal, 
-                               auteur=auteur, 
-                               url=art.get("url", None),
-                               tags=art.get("tags", None),
-                               verbose=verbose)
+                res = save_article_in_bdd(dao=dao, journal=journal, art=art, verbose=verbose)
+                
                 if res:
                     nb_added_art += 1
                 else:
@@ -96,13 +87,13 @@ def _article_dic_to_str(art):
     auteur=art.get("auteur", None)
     return f"{titre} du {date_parution} de {auteur} pour {journal}"
 
-def _load_tregor(dao, verbose=0):
+def _load_tregor(dao, nb_articles=500, verbose=0):
     ever_save = dao.get_articles_url(journal="Le Trégor")
 
     if verbose:
         print("TREGOR ==> Début du scrapping des articles...")
     
-    articles = tregor.get_articles(exclude=ever_save,verbose=verbose)
+    articles = tregor.get_articles(dao=dao, nb_articles=nb_articles,exclude=ever_save,verbose=verbose)
     if articles is not None and len(articles)>0:
         res = save_articles_in_bdd(dao=dao, journal="Le Trégor", articles=articles, verbose=verbose)
     else:
@@ -111,12 +102,12 @@ def _load_tregor(dao, verbose=0):
     if verbose:
         print("30 M. d'AMIS ==> Début du scrapping des articles...")
 
-def _load_30_m_amis(dao, verbose=0):
+def _load_30_m_amis(dao, nb_articles=100, verbose=0):
     if verbose:
         print("30 M. d'AMIS ==> Début du scrapping des articles...")
     
     ever_save = dao.get_articles_url(journal="30 M. d'amis")
-    articles = amis30.get_articles(exclude=ever_save,nb_page_to_proceed = 20,verbose=verbose)
+    articles = amis30.get_articles(dao=dao, nb_articles=nb_articles,exclude=ever_save,verbose=verbose)
     if articles is not None and len(articles)>0:
         res = save_articles_in_bdd(dao=dao, journal="30 M. d'amis", articles=articles, verbose=verbose)
     else:

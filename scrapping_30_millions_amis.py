@@ -1,5 +1,5 @@
 from black import err
-from scrapping_util import get_page, get_page_links
+from scrapping_util import get_page, get_page_links, save_article_in_bdd
 
 def get_div_text(balise, verbose=0):
 
@@ -102,7 +102,7 @@ def get_article(url, journal=None, verbose=0):
     return article
 
 
-def get_url_to_scrapt(nb_page_to_proceed = 2, verbose = 0):
+def get_url_to_scrapt(nb_articles=100, verbose = 0):
     """Return the url liste to scrapt
 
     Args:
@@ -114,6 +114,7 @@ def get_url_to_scrapt(nb_page_to_proceed = 2, verbose = 0):
     base_url = "https://www.30millionsdamis.fr/"
     page_url = base_url+"actualites/actu-page/1/"
     
+    nb_page_to_proceed = nb_articles // 16
 
     liste_urls =set()
         
@@ -149,17 +150,21 @@ def get_url_to_scrapt(nb_page_to_proceed = 2, verbose = 0):
     return liste_urls
 
 
-def get_articles(exclude=None, journal="30 M. d'amis",nb_page_to_proceed = 2, verbose = 0):
-    """retournes tous articles
+def get_articles(dao=None, nb_articles=100, exclude=None, journal="30 M. d'amis", verbose = 0):
+    """Charge tous articles, les sauvegarde en BDD si dao est renseigné
 
     Args:
-        exclude
+        dao (_type_): _description_
+        nb_articles (int, optional): _description_. Defaults to 100.
+        exclude (_type_, optional): _description_. Defaults to None.
+        journal (str, optional): _description_. Defaults to "30 M. d'amis".
         verbose (int, optional): log level. Defaults to 0.
 
     Returns:
         list(dict): Papers and article list
     """
-    articles_urls_to_scrapt = get_url_to_scrapt(nb_page_to_proceed = nb_page_to_proceed,verbose=verbose)
+       
+    articles_urls_to_scrapt = get_url_to_scrapt(nb_articles = nb_articles,verbose=verbose)
     
     if verbose:
         print("30 M. d'AMIS ==> Début du scrapping des articles")
@@ -173,6 +178,13 @@ def get_articles(exclude=None, journal="30 M. d'amis",nb_page_to_proceed = 2, ve
             try:
 
                 art = get_article(url,journal=journal, verbose=verbose)
+                articles.append(art)
+
+                if dao is not None:
+                    # Ajout de l'article en BDD
+                    added = save_article_in_bdd(dao=dao, journal=journal, art=art, verbose = verbose)
+                    if not added:
+                        print("30 M. d'AMIS ==> ERROR : Article non ajouté en BDD --------------------------- !!")    
                 articles.append(art)
             except Exception as error:
                 print("30 M. d'AMIS ==> ERROR : ", error, " --------------------------- !!")
@@ -189,7 +201,7 @@ def get_articles(exclude=None, journal="30 M. d'amis",nb_page_to_proceed = 2, ve
 if __name__ == "__main__":
 
     verbose = 1
-    articles_urls_to_scrapt = list(get_url_to_scrapt(nb_page_to_proceed=2, verbose=1))
+    articles_urls_to_scrapt = list(get_url_to_scrapt(nb_articles=50, verbose=1))
 
     assert articles_urls_to_scrapt
 
@@ -200,7 +212,7 @@ if __name__ == "__main__":
 
     assert art
 
-    articles = get_articles(verbose=1)
+    articles = get_articles(nb_articles=50,verbose=1)
     print("END")
 
             

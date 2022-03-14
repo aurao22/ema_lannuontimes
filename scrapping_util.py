@@ -3,6 +3,7 @@ import bs4
 from selenium import webdriver
 import time
 from os import environ
+import news_paper_dao as np_dao
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                                              COMMON SCRAPPING
@@ -82,6 +83,44 @@ def get_selenium_firefox_driver(url, gecko_driver_path=None, verbose=0):
     driver.get(url)
     time.sleep(5)
     return driver
+
+
+def save_article_in_bdd(dao, journal, art, verbose = 0):
+    """
+    Save articles in BDD
+    Args:
+        dao (NewsPaperDao): dao
+        journal (str) : journal name
+        article (dict) : article
+        verbose (int, optional): log level. Defaults to 0.
+
+    Returns:
+        int : nb added articles
+    """
+    res = 0  
+    if art is not None and dao is not None:
+        titre=art.get("titre", None)
+        date_parution=art.get("date_parution", None)
+        texte=art.get("texte", None)
+        journal=art.get("journal", None)
+        auteur=art.get("auteur", None)
+
+        # On poursuit le traitement même si l'enregistrement d'un article pose problème
+        try:
+            res = dao.ajouter_article(titre=titre,
+                            date_parution=date_parution, 
+                            texte=texte, 
+                            journal=journal, 
+                            auteur=auteur, 
+                            url=art.get("url", None),
+                            tags=art.get("tags", None),
+                            verbose=verbose)
+        except Exception as error:
+            print(f"{journal} ==> ERROR ==> Error lors de l'ajout de l'article : {art}", error)
+            print(error)
+            raise error
+      
+    return res
     
 
 

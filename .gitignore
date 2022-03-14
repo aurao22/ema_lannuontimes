@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 gestion_projet/.~lock.*.odt#
 *.exe
+.vscode/launch.json

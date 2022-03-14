@@ -1,4 +1,3 @@
-from black import err
 from scrapping_util import get_page, get_page_links, save_article_in_bdd
 
 def get_div_text(balise, verbose=0):

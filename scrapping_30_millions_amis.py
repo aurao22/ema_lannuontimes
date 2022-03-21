@@ -184,7 +184,6 @@ def get_articles(dao=None, nb_articles=100, exclude=None, journal="30 M. d'amis"
                     added = save_article_in_bdd(dao=dao, journal=journal, art=art, verbose = verbose)
                     if not added:
                         print("30 M. d'AMIS ==> ERROR : Article non ajouté en BDD --------------------------- !!")    
-                articles.append(art)
             except Exception as error:
                 print("30 M. d'AMIS ==> ERROR : ", error, " --------------------------- !!")
         else:

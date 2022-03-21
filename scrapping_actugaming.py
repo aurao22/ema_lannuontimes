@@ -93,7 +93,6 @@ def get_articles(dao=None, nb_articles=100, exclude=None, journal="ActuGaming", 
                     added = save_article_in_bdd(dao=dao, journal=journal, art=art, verbose = verbose)
                     if not added:
                         print("ActuGaming ==> ERROR : Article non ajouté en BDD --------------------------- !!")    
-                articles.append(art)
             except Exception as error:
                 print("ActuGaming ==> ERROR : ", error, " --------------------------- !!")
         else:

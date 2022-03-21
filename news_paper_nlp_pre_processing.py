@@ -1,5 +1,7 @@
 import re
 import unicodedata
+import matplotlib.pyplot as plt
+import numpy as np
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords, wordnet
 from nltk.corpus.reader import WordListCorpusReader
@@ -136,3 +138,25 @@ def remove_stopwords_func(text, language="french", sw=None):
             res.append(' '.join(t))
         res = list(filter(None, res))
     return res
+
+# ----------------------------------------------------------------------------------
+#                        GRAPHIQUES
+# ----------------------------------------------------------------------------------
+PLOT_FIGURE_BAGROUNG_COLOR = 'white'
+PLOT_BAGROUNG_COLOR = PLOT_FIGURE_BAGROUNG_COLOR
+
+
+def color_graph_background(ligne=1, colonne=1):
+    figure, axes = plt.subplots(ligne,colonne)
+    figure.patch.set_facecolor(PLOT_FIGURE_BAGROUNG_COLOR)
+    if isinstance(axes, np.ndarray):
+        for axe in axes:
+            # Traitement des figures avec plusieurs lignes
+            if isinstance(axe, np.ndarray):
+                for ae in axe:
+                    ae.set_facecolor(PLOT_BAGROUNG_COLOR)
+            else:
+                axe.set_facecolor(PLOT_BAGROUNG_COLOR)
+    else:
+        axes.set_facecolor(PLOT_BAGROUNG_COLOR)
+    return figure, axes

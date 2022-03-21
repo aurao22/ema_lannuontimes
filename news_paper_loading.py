@@ -10,7 +10,7 @@ from os import getcwd
 #                                              CHARGEMENT INITIAL
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-def load_articles(papers=["Le Trégor", "30 M. d'AMIS", "ActuGaming"], nb_articles=500, verbose = 0):
+def load_articles(papers=["Le Trégor", "30 M. d'AMIS", "ActuGaming"], nb_articles=500, gecko_driver_path=None, verbose = 0):
     """Save articles in BDD
 
     Args:
@@ -42,7 +42,7 @@ def load_articles(papers=["Le Trégor", "30 M. d'AMIS", "ActuGaming"], nb_articl
     # TODO Erwan : ajouter chargement des articles ELLE
     
     if "ActuGaming" in papers:
-        _load_actugaming(dao, nb_articles=nb_articles, verbose=verbose)
+        _load_actugaming(dao, nb_articles=nb_articles, gecko_driver_path=gecko_driver_path, verbose=verbose)
 
 def save_articles_in_bdd(dao, journal, articles, verbose = 0):
     """
@@ -116,12 +116,12 @@ def _load_30_m_amis(dao, nb_articles=100, verbose=0):
     else:
         print("30 M. d'AMIS ==> Aucun nouvel article...")
 
-def _load_actugaming(dao, nb_articles=100, verbose=0):
+def _load_actugaming(dao, nb_articles=100, gecko_driver_path=None, verbose=0):
     if verbose:
         print("Actugaming ==> Début du scrapping des articles...")
     
     ever_save = dao.get_articles_url(journal="ActuGaming")
-    articles = actugaming.get_articles(dao=dao, nb_articles=nb_articles,exclude=ever_save,verbose=verbose)
+    articles = actugaming.get_articles(dao=dao, nb_articles=nb_articles,exclude=ever_save, gecko_driver_path=gecko_driver_path, verbose=verbose)
     if articles is not None and len(articles)>0:
         res = save_articles_in_bdd(dao=dao, journal="ActuGaming", articles=articles, verbose=verbose)
     else:
@@ -134,4 +134,4 @@ if __name__ == "__main__":
     verbose = 1
     # load_articles(papers=["Le Trégor", "30 M. d'AMIS", "ActuGaming"],verbose=verbose)
     # load_articles(papers=["30 M. d'AMIS"],verbose=verbose)
-    load_articles(papers=["ActuGaming"],verbose=verbose)
+    load_articles(papers=["ActuGaming"], nb_articles=100, gecko_driver_path="geckodriver.exe", verbose=verbose)

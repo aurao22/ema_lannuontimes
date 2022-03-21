@@ -5,12 +5,8 @@ from selenium.webdriver.firefox.service import Service
 import time
 import math
 
-def get_links(url, nb_articles=20, verbose=0):
-    DRIVER_PATH = 'geckodriver.exe'
-    # driver = webdriver.Firefox(service=Service(DRIVER_PATH))
-    # driver.get(url)
-    # time.sleep(5)
-    driver = get_selenium_firefox_driver(url, gecko_driver_path=DRIVER_PATH)
+def get_links(url="https://www.actugaming.net/actualites/", gecko_driver_path=None, nb_articles=20, verbose=0):
+    driver = get_selenium_firefox_driver(url, gecko_driver_path=gecko_driver_path)
     refuse_btn = driver.find_element(by=By.CLASS_NAME, value='css-1g6dv8a')
     refuse_btn.click()
     load_more_btn = driver.find_element(by=By.CLASS_NAME, value='alm-load-more-btn')
@@ -23,9 +19,12 @@ def get_links(url, nb_articles=20, verbose=0):
 
     time.sleep(5)
     elems = driver.find_elements(by=By.XPATH, value="//figure/a[@href]")
-    urls = []
-    for elem in elems[:nb_articles]:
-        urls.append(elem.get_attribute("href"))
+    urls = set()
+
+    i = 0
+    while len(urls) < nb_articles and i < len(elems):
+        urls.add(elems[i].get_attribute("href"))
+        i+=1
 
     return urls
 
@@ -60,6 +59,51 @@ def get_article(url, verbose=0):
     addict["journal"] = "ActuGaming"
     addict["tags"] = "gaming"
     return addict
+
+def get_articles(dao=None, nb_articles=100, exclude=None, journal="ActuGaming", gecko_driver_path=None, verbose = 0):
+    """Charge tous articles, les sauvegarde en BDD si dao est renseigné
+
+    Args:
+        dao (_type_): _description_
+        nb_articles (int, optional): _description_. Defaults to 100.
+        exclude (_type_, optional): _description_. Defaults to None.
+        journal (str, optional): _description_. Defaults to "ActuGaming".
+        verbose (int, optional): log level. Defaults to 0.
+
+    Returns:
+        list(dict): Papers and article list
+    """
+       
+    articles_urls_to_scrapt = get_links(nb_articles = nb_articles,verbose=verbose, gecko_driver_path=gecko_driver_path)
+    
+    
+    if verbose:
+        print("ActuGaming ==> Début du scrapping des articles")
+
+    articles = []
+    if exclude is None:
+        exclude = []
+    excluded = 0
+    for url in articles_urls_to_scrapt:
+        if url not in exclude:
+            try:
+                art = get_article(url, verbose=verbose)
+                articles.append(art)
+
+                if dao is not None:
+                    # Ajout de l'article en BDD
+                    added = save_article_in_bdd(dao=dao, journal=journal, art=art, verbose = verbose)
+                    if not added:
+                        print("ActuGaming ==> ERROR : Article non ajouté en BDD --------------------------- !!")    
+                articles.append(art)
+            except Exception as error:
+                print("ActuGaming ==> ERROR : ", error, " --------------------------- !!")
+        else:
+            excluded += 1
+    if verbose:
+        print(f"ActuGaming ==> {len(articles)} articles and {excluded} exculded arcticles")
+    return articles
+# 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                                              TESTS

@@ -134,4 +134,5 @@ if __name__ == "__main__":
     verbose = 1
     # load_articles(papers=["Le Trégor", "30 M. d'AMIS", "ActuGaming"],verbose=verbose)
     # load_articles(papers=["30 M. d'AMIS"],verbose=verbose)
-    load_articles(papers=["ActuGaming"], nb_articles=500, gecko_driver_path="geckodriver.exe", verbose=verbose)
+    # load_articles(papers=["ActuGaming"], nb_articles=500, gecko_driver_path="geckodriver.exe", verbose=verbose)
+    load_articles(papers=["Le Trégor"],verbose=verbose)

@@ -1,5 +1,7 @@
 import sqlite3
 from os import getcwd, remove, path
+from collections import defaultdict
+import pandas as pd
 
 class NewsPaperDao():
 
@@ -220,8 +222,8 @@ class NewsPaperDao():
         """_summary_
 
         Args:
-            journal (_type_, optional): _description_. Defaults to None.
-            verbose (int, optional): _description_. Defaults to 0.
+            journal (str, optional): News paper name. Defaults to None.
+            verbose (int, optional): log level. Defaults to 0.
 
         Returns:
             _type_: _description_
@@ -237,6 +239,36 @@ class NewsPaperDao():
             for tu in res:
                 url_list.append(tu[0])
         return url_list
+
+    def get_articles(self, journal=None, df=True, verbose=0):
+        """_summary_
+
+        Args:
+            journal (str, optional): News paper name. Defaults to None.
+            verbose (int, optional): log level. Defaults to 0.
+
+        Returns:
+            (DataFrame or list(list)): Articles list
+        """
+        sql = 'SELECT `titre`,`date_parution`, `journal`, `auteur`, `tags`, `texte`, `url` FROM `article`'
+        if journal is not None and len(journal)>0:
+            journal = journal.replace("'", "\\'")
+            sql += f' WHERE `journal` = "{journal}"'
+        res = self._executer_sql(sql+" ;", verbose=verbose)
+
+        if df and res is not None and isinstance(res, list):
+            articles_dic = defaultdict(list)
+            for art in res:
+                articles_dic['titre'].append(art[0])
+                articles_dic['date_parution'].append(art[1])
+                articles_dic['journal'].append(art[2])
+                articles_dic['auteur'].append(art[3])
+                articles_dic['tags'].append(art[4])
+                articles_dic['texte'].append(art[5])
+                articles_dic['url'].append(art[6])
+            df_origin = pd.DataFrame.from_dict(articles_dic)
+            return df_origin
+        return res
    
 
     def initialiser_bdd(self, drop_if_exist = False, verbose=False):
@@ -407,25 +439,15 @@ def _remove_file(file_path):
         print(e)
    
 
-if __name__ == "__main__":
-
-    verbose = 1
-
-
+def _test_sql_str_preprocess(verbose=0):
     txt = 'Lannion. Léa Poplin, nouvelle sous-préfète : "Je suis là pour faire avancer les dossiers"'
     res = _sql_str_preprocess(txt)
     if verbose:
         print(txt)
         print(res)
-
     assert res == "Lannion. Léa Poplin, nouvelle sous-préfète : \\'\\'Je suis là pour faire avancer les dossiers\\'\\'"
 
-    # Récupère le répertoire du programme
-    curent_path = getcwd()+ "\\"
-    if "ema_lannuontimes" not in curent_path:
-        curent_path += "PROJETS\\ema_lannuontimes\\"
-    print(curent_path)
-
+def _test_bdd_temp(curent_path, verbose=0):
     test_file_bdd = curent_path+'bdd_test.db'
     test_file_bdd_save = curent_path+"bdd_test_sauvegarde.db"
     
@@ -450,3 +472,28 @@ if __name__ == "__main__":
     _remove_file(test_file_bdd)
     _remove_file(test_file_bdd.replace(".db", ".backup.db"))
     _remove_file(test_file_bdd_save)
+
+if __name__ == "__main__":
+
+    verbose = 0
+
+    _test_sql_str_preprocess(verbose=verbose)
+
+    # Récupère le répertoire du programme
+    curent_path = getcwd()+ "\\"
+    if "ema_lannuontimes" not in curent_path:
+        curent_path += "PROJETS\\ema_lannuontimes\\"
+    print(curent_path)
+
+    _test_bdd_temp(curent_path=curent_path, verbose=verbose)
+
+    verbose = 1
+
+    dao = NewsPaperDao(nom_bdd=curent_path+"em_bdd.db")
+    assert dao.test_connexion()
+
+    df_articles = dao.get_articles(verbose=verbose)
+    print(df_articles.shape)
+    
+
+    

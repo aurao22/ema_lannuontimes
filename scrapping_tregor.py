@@ -281,12 +281,12 @@ def get_articles(dao=None, nb_articles=100, exclude=None, journal="Le Trégor", 
             try:
 
                 art = get_article(url, tags=tags, journal=journal, verbose=verbose)
+                articles.append(art)
                 if dao is not None:
                     # Ajout de l'article en BDD
                     added = save_article_in_bdd(dao=dao, journal=journal, art=art, verbose = verbose)
                     if not added:
                         print("TREGOR ==> ERROR : Article non ajouté en BDD --------------------------- !!")    
-                articles.append(art)
             except Exception as error:
                 print("TREGOR ==> ERROR : ", error, " --------------------------- !!")
         else:

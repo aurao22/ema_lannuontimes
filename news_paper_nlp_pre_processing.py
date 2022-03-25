@@ -5,6 +5,13 @@ import numpy as np
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords, wordnet
 from nltk.corpus.reader import WordListCorpusReader
+import warnings
+warnings.filterwarnings("ignore")
+try:
+    from sklearn.utils._testing import ignore_warnings
+except ImportError:
+    from sklearn.utils.testing import ignore_warnings
+from sklearn.exceptions import ConvergenceWarning
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                                              FUNCTIONS
@@ -139,12 +146,163 @@ def remove_stopwords_func(text, language="french", sw=None):
         res = list(filter(None, res))
     return res
 
+
+def get_numeric_columns_names(df, verbose=False):
+    """Retourne les noms des colonnes numériques
+    Args:
+        df (DataFrame): Données
+        verbose (bool, optional): Mode debug. Defaults to False.
+
+    Returns:
+        List(String): liste des noms de colonne
+    """
+    numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
+    newdf = df.select_dtypes(include=numerics)
+    return list(newdf.columns)
+
+# ----------------------------------------------------------------------------------
+#                        MODELS : FIT AND TEST
+# ----------------------------------------------------------------------------------
+from sklearn.svm import LinearSVC
+import time
+
+def fit_and_test_models(model_list, X_train, Y_train, X_test, Y_test, y_column_name=None, verbose=0, scores=None, metrics=0, transformer=None):
+    
+    # Sauvegarde des modèles entrainés
+    modeldic = {}
+    yt = Y_test
+    ya = Y_train
+    # Sauvegarde des données
+    if scores is None:
+        scores = defaultdict(list)
+
+    if y_column_name is None:
+        y_column_name = ""
+    else:
+        yt = Y_test[y_column_name]
+        ya = Y_train[y_column_name]
+
+    scorelist = []
+    try:
+        for mod_name, model in model_list.items():
+            try:
+                model_name = mod_name
+                if len(y_column_name) > 0:
+                    model_name = y_column_name+"-"+model_name
+
+                if isinstance(model, LinearSVC):
+                    if ya.nunique() <= 2:
+                        continue
+                scores["Class"].append(y_column_name)
+                scores["Model"].append(mod_name)
+                md, score_l = fit_and_test_a_model(model,model_name, X_train, ya, X_test, yt, verbose=verbose, metrics=metrics, transformer=transformer) 
+                modeldic[model_name] = md
+                scorelist.append(score_l)
+            except Exception as ex:
+                print(mod_name, "FAILED : ", ex)
+        
+        for score_l in scorelist:
+            for key, val in score_l.items():
+                scores[key].append(val)    
+    except Exception as ex:
+            print(mod_name, "FAILED : ", ex)
+
+    return modeldic, scores
+
+@ignore_warnings(category=ConvergenceWarning)
+def fit_and_test_a_model(model, model_name, X_train, y_train, X_test, y_test, verbose=0, metrics=0, transformer=None):
+    t0 = time.time()
+    if verbose:
+        print(model_name, "X_train:", X_train.shape,"y_train:", y_train.shape, "X_test:", X_test.shape,"y_test:", y_test.shape)
+
+    if transformer is not None:
+        try:
+            X_train = transformer.fit_transform(X_train)
+            X_test = transformer.fit_transform(X_test)
+            if verbose:
+                print(model_name, "After transform : X_train:", X_train.shape,"y_train:", y_train.shape, "X_test:", X_test.shape,"y_test:", y_test.shape)
+        except:
+            pass
+    model.fit(X_train, y_train)
+    
+    r2 = model.score(X_test, y_test)
+    if verbose:
+        print(model_name+" "*(20-len(model_name))+":", round(r2, 3))
+    t_model = (time.time() - t0)
+        
+    # Sauvegarde des scores
+    modeldic_score = {"Modeli":model_name,
+                      "R2":r2,
+                      "fit time":time.strftime("%H:%M:%S", time.gmtime(t_model)),
+                      "fit seconde":t_model}
+    
+    # Calcul et Sauvegarde des métriques
+    if metrics > 0:
+        full=metrics > 1
+        t0 = time.time()
+        model_metrics = get_metrics_for_the_model(model, X_test, y_test, y_pred=None,scores=None, model_name=model_name, r2=r2, full_metrics=full, verbose=verbose, transformer=transformer)
+        t_model = (time.time() - t0)   
+        modeldic_score["metrics time"] = time.strftime("%H:%M:%S", time.gmtime(t_model))
+        modeldic_score["metrics seconde"] = t_model
+
+        for key, val in model_metrics.items():
+            if "R2" not in key and "Model" not in key:
+                modeldic_score[key] = val[0]
+
+    return model, modeldic_score
+
+
+from sklearn.metrics import *
+from sklearn.metrics import roc_curve, RocCurveDisplay, precision_recall_curve, PrecisionRecallDisplay
+
+from collections import defaultdict
+import pandas as pd
+
+# ----------------------------------------------------------------------------------
+#                        MODELS : METRICS
+# ----------------------------------------------------------------------------------
+def get_metrics_for_the_model(model, X_test, y_test, y_pred,scores=None, model_name="", r2=None, verbose=0):
+    if scores is None:
+        scores = defaultdict(list)
+    scores["Model"].append(model_name)
+        
+    if r2 is None:
+        r2 = round(model.score(X_test, y_test),3)
+        
+    if y_pred is None:
+        t0 = time.time()
+        y_pred = model.predict(X_test)
+        t_model = (time.time() - t0)   
+        # Sauvegarde des scores
+        scores["predict time"].append(time.strftime("%H:%M:%S", time.gmtime(t_model)))
+        scores["predict seconde"].append(t_model)
+        
+    scores["R2"].append(r2)
+    scores["MAE"].append(mean_absolute_error(y_test, y_pred))
+    mse = mean_squared_error(y_test, y_pred)
+    scores["MSE"].append(mse)
+    scores["RMSE"].append(np.sqrt(mse))
+    scores["Mediane AE"].append(median_absolute_error(y_test, y_pred))
+
+    return scores
+
+def get_metrics_for_model(model_dic, X_test, y_test, verbose=0):
+    score_df = None
+    scores = defaultdict(list)
+    for model_name, (model, y_pred, r2) in model_dic.items():
+        scores = get_metrics_for_the_model(model, X_test, y_test, y_pred, scores,model_name=model_name, r2=r2, verbose=verbose)
+
+    score_df = pd.DataFrame(scores).set_index("Model")
+    score_df.round(decimals=3)
+    return score_df
+
+
+
 # ----------------------------------------------------------------------------------
 #                        GRAPHIQUES
 # ----------------------------------------------------------------------------------
 PLOT_FIGURE_BAGROUNG_COLOR = 'white'
 PLOT_BAGROUNG_COLOR = PLOT_FIGURE_BAGROUNG_COLOR
-
 
 def color_graph_background(ligne=1, colonne=1):
     figure, axes = plt.subplots(ligne,colonne)
@@ -160,3 +318,16 @@ def color_graph_background(ligne=1, colonne=1):
     else:
         axes.set_facecolor(PLOT_BAGROUNG_COLOR)
     return figure, axes
+
+
+from wordcloud import WordCloud
+
+def word_cloud(journal, df_articles):
+    text_ag = ''.join(df_articles[df_articles["journal"]==journal]["texte_clean"].tolist())
+    word_cloud = WordCloud(collocations = False, background_color = 'white').generate(text_ag)
+    
+    plt.rcParams["figure.figsize"]=(15, 8)
+    plt.imshow(word_cloud, interpolation='bilinear')
+    plt.title(journal.upper(), fontsize=16)
+    plt.axis("off")
+    plt.show()

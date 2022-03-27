@@ -130,3 +130,4 @@ dmypy.json
 gestion_projet/.~lock.*.odt#
 *.exe
 .vscode/launch.json
+pre_trained_models/

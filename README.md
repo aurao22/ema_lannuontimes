@@ -16,6 +16,11 @@ Installation du griver gecko pour firefox :
 - Entrainer le modèle :
 - Charger le modèle pré-entrainer et prédire un article :
 
+
+## liste d'url pour la démo
+
+https://www.elle.fr/People/La-vie-des-people/News/Miley-Cyrus-son-mariage-desastreux-avec-Liam-Hemsworth-4011676
+
 ## Installation de WordCloud
 
 ==== Installation of wordcloud package ====

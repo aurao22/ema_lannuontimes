@@ -20,17 +20,18 @@ def get_links(url='https://www.elle.fr/actu/fil-info/People',nb_articles=20, gec
         _type_: _description_
     """
     driver = get_selenium_firefox_driver(url, gecko_driver_path=gecko_driver_path)
-        
-    time.sleep(5)
-    elems = driver.find_elements(by=By.XPATH, value="//span/a[@href]")
-    urls = set()
 
     time.sleep(5)
 
     stop_cookies = driver.find_element_by_id("didomi-notice-agree-button")
     stop_cookies.click()
 
-    time.sleep(3)
+    time.sleep(5)  
+
+    elems = driver.find_elements(by=By.XPATH, value="//span/a[@href]")
+    urls = set()
+
+   
 
     i = 0
     while len(urls) < nb_articles and i < len(elems):

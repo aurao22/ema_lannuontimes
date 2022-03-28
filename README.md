@@ -20,6 +20,7 @@ Installation du griver gecko pour firefox :
 ## liste d'url pour la démo
 
 https://www.elle.fr/People/La-vie-des-people/News/Miley-Cyrus-son-mariage-desastreux-avec-Liam-Hemsworth-4011676
+https://www.actugaming.net/god-of-war-ragnarok-sortirait-toujours-en-2022-selon-santa-monica-studios-489652/
 
 ## Installation de WordCloud
 

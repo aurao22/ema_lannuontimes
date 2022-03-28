@@ -305,7 +305,8 @@ def save_model(model_to_save, file_path):
     date_time = now.strftime("%Y-%m-%d-%H_%M_%S")
     model_save_file_name = 'ema_lannuontimes_saved_model_' + date_time + '.joblib'
     # Attention, il faudra mettre à jour les colonnes correspondantes dans le premier if en cas de modification du model
-    dump(model_to_save, file_path)
+    dump(model_to_save, file_path+model_save_file_name)
+    return file_path+model_save_file_name
 
 from os import path
 def load_model(model_save_path):

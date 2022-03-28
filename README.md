@@ -15,3 +15,19 @@ Installation du griver gecko pour firefox :
 - Scrapper et stocker les articles de journaux : lancer le script python news_paper_loading.py
 - Entrainer le modèle :
 - Charger le modèle pré-entrainer et prédire un article :
+
+## Installation de WordCloud
+
+==== Installation of wordcloud package ====
+
+```
+    download wordcloud‑1.8.1‑cp39‑cp39‑win_amd64.whl from http://www.lfd.uci.edu/~gohlke/pythonlibs/#wordcloud
+    Copy the file to your current working directory
+    Open command prompt from Tools
+    python -m pip install wordcloud‑1.8.1‑cp39‑cp39‑win_amd64.whl
+
+
+Note wordcloud‑1.8.1‑cp39‑cp39‑win_amd64.whl :
+cp39 => python 3.9
+cp310 => python 3.10
+```

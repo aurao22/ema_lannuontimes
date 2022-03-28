@@ -140,6 +140,24 @@ def _load_elle(dao, nb_articles=100, gecko_driver_path=None, verbose=0):
     else:
         print("Elle ==> Aucun nouvel article...")
 
+
+def get_text_from_URL(url, verbose=0):
+    article = None
+    if '30millionsdamis' in url:
+        article = amis30.get_article(url, verbose=verbose)
+    elif 'elle' in url:
+        article = elle.get_article(url, verbose=verbose)
+    elif 'actugaming' in url:
+        article = actugaming.get_article(url, verbose=verbose)
+    elif 'tregor' in url or 'actu.fr' in url:
+        article = tregor.get_article(url, verbose=verbose)
+    
+    if article is not None:
+        return article.get('texte', None)
+    else:
+        return None
+
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                                              TESTS
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -149,4 +167,13 @@ if __name__ == "__main__":
     # load_articles(papers=["30 M. d'AMIS"],verbose=verbose)
     # load_articles(papers=["ActuGaming"], nb_articles=500, gecko_driver_path="geckodriver.exe", verbose=verbose)
     # load_articles(papers=["Le Trégor"],verbose=verbose)
-    load_articles(papers=["Elle"],nb_articles=800, gecko_driver_path=r"C:\Users\erwan\Downloads\geckodriver.exe",verbose=verbose)
+    # load_articles(papers=["Elle"],nb_articles=800, gecko_driver_path=r"C:\Users\erwan\Downloads\geckodriver.exe",verbose=verbose)
+    url_30M = 'https://www.30millionsdamis.fr/actualites/article/22101-deux-lions-et-deux-tigres-ukrainiens-transferes-dans-un-refuge-aux-pays-bas/'
+    print(get_text_from_URL(url_30M))
+    url_elle = 'https://www.elle.fr/People/La-vie-des-people/News/Miley-Cyrus-son-mariage-desastreux-avec-Liam-Hemsworth-4011676'
+    print(get_text_from_URL(url_elle))
+    url_actu = 'https://www.actugaming.net/god-of-war-ragnarok-sortirait-toujours-en-2022-selon-santa-monica-studios-489652/'
+    print(get_text_from_URL(url_actu))
+    url_tregor = 'https://actu.fr/bretagne/lannion_22113/lannion-sept-ukrainiens-accueillis-a-lhotel-ibis_49736570.html'
+    print(get_text_from_URL(url_tregor))
+

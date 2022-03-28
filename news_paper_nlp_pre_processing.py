@@ -296,6 +296,22 @@ def get_metrics_for_model(model_dic, X_test, y_test, verbose=0):
     score_df.round(decimals=3)
     return score_df
 
+from joblib import dump, load
+from datetime import datetime
+
+def save_model(model_to_save, file_path):
+    # Sauvegarde du meilleur modele
+    now = datetime.now() # current date and time
+    date_time = now.strftime("%Y-%m-%d-%H_%M_%S")
+    model_save_file_name = 'ema_lannuontimes_saved_model_' + date_time + '.joblib'
+    # Attention, il faudra mettre à jour les colonnes correspondantes dans le premier if en cas de modification du model
+    dump(model_to_save, file_path)
+
+from os import path
+def load_model(model_save_path):
+    if path.exists(model_save_path) and path.isfile(model_save_path):
+        # Chargement du modèle pré-entrainer
+        return load(model_save_path)
 
 
 # ----------------------------------------------------------------------------------

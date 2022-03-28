@@ -149,4 +149,4 @@ if __name__ == "__main__":
     # load_articles(papers=["30 M. d'AMIS"],verbose=verbose)
     # load_articles(papers=["ActuGaming"], nb_articles=500, gecko_driver_path="geckodriver.exe", verbose=verbose)
     # load_articles(papers=["Le Trégor"],verbose=verbose)
-    load_articles(papers=["Elle"],nb_articles=20,verbose=verbose)
+    load_articles(papers=["Elle"],nb_articles=800, gecko_driver_path=r"C:\Users\erwan\Downloads\geckodriver.exe",verbose=verbose)

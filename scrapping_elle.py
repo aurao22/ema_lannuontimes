@@ -36,6 +36,11 @@ def get_links(url='https://www.elle.fr/actu/fil-info/People',nb_articles=20, gec
     while len(urls) < nb_articles and i < len(elems):
         urls.add(elems[i].get_attribute("href"))
         i+=1
+        
+    # Ferme le navigateur
+    if driver is not None:
+        driver.close()
+
     if verbose:
         print(f"Elle > proceed {len(urls)} URLs added")
     return urls
@@ -48,17 +53,6 @@ def get_article(url, gecko_driver_path=None, verbose=0):
     if verbose:
         print(f"Elle > proceed {(url)} ...", end="")
     page = get_page(url)
-    
-    # Traitement de la pop-up
-    try:
-        driver = get_selenium_firefox_driver(url, gecko_driver_path=gecko_driver_path)
-        time.sleep(5)
-        later = driver.find_element_by_id("batchsdk-ui-alert__buttons_negative")
-        if later is not None:
-            later.click()
-            time.sleep(5)
-    except Exception:
-        pass
  
     #Récupération des titres
     title = page.find("h1").getText()
@@ -76,7 +70,6 @@ def get_article(url, gecko_driver_path=None, verbose=0):
     date = page.find('span', {'class' : 'publication'}).getText().strip()
     addict["date_parution"] = date.replace("Publié le ", "")
     
-    
     #Récupération de l'auteur
     author = page.find('span', {'class' : 'media-heading'}).getText().strip()
     addict["auteur"] = author
@@ -84,6 +77,7 @@ def get_article(url, gecko_driver_path=None, verbose=0):
     #Inchangés
     addict["journal"] = "Elle"
     addict["tags"] = "People"
+
     if verbose:
         print(f"..... DONE")
     return addict

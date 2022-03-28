@@ -1,6 +1,7 @@
 import scrapping_tregor as tregor
 import scrapping_30_millions_amis as amis30
 import scrapping_actugaming as actugaming
+import scrapping_elle as elle
 from scrapping_util import save_article_in_bdd
 import news_paper_dao as np_dao
 from os import getcwd
@@ -39,8 +40,9 @@ def load_articles(papers=["Le Trégor", "30 M. d'AMIS", "ActuGaming"], nb_articl
     if "30 M. d'AMIS" in papers:
         _load_30_m_amis(dao, nb_articles=nb_articles, verbose=verbose)
 
-    # TODO Erwan : ajouter chargement des articles ELLE
-    
+    if "Elle" in papers:
+        _load_elle(dao, nb_articles=nb_articles, gecko_driver_path=gecko_driver_path, verbose=verbose)
+
     if "ActuGaming" in papers:
         _load_actugaming(dao, nb_articles=nb_articles, gecko_driver_path=gecko_driver_path, verbose=verbose)
 
@@ -127,12 +129,24 @@ def _load_actugaming(dao, nb_articles=100, gecko_driver_path=None, verbose=0):
     else:
         print("Actugaming ==> Aucun nouvel article...")
 
+def _load_elle(dao, nb_articles=100, gecko_driver_path=None, verbose=0):
+    if verbose:
+        print("Elle ==> Début du scrapping des articles...")
+    
+    ever_save = dao.get_articles_url(journal="Elle")
+    articles = elle.get_articles(dao=dao, nb_articles=nb_articles,exclude=ever_save, gecko_driver_path=gecko_driver_path, verbose=verbose)
+    if articles is not None and len(articles)>0:
+        res = save_articles_in_bdd(dao=dao, journal="Elle", articles=articles, verbose=verbose)
+    else:
+        print("Elle ==> Aucun nouvel article...")
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                                              TESTS
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 if __name__ == "__main__":
     verbose = 1
-    # load_articles(papers=["Le Trégor", "30 M. d'AMIS", "ActuGaming"],verbose=verbose)
+    # load_articles(papers=["Le Trégor", "30 M. d'AMIS", "ActuGaming", "Elle"],verbose=verbose)
     # load_articles(papers=["30 M. d'AMIS"],verbose=verbose)
     # load_articles(papers=["ActuGaming"], nb_articles=500, gecko_driver_path="geckodriver.exe", verbose=verbose)
-    load_articles(papers=["Le Trégor"],verbose=verbose)
+    # load_articles(papers=["Le Trégor"],verbose=verbose)
+    load_articles(papers=["Elle"],nb_articles=20,verbose=verbose)

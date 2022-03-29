@@ -1,10 +1,11 @@
 from scrapping_util import get_page, get_page_links, save_article_in_bdd
+from tqdm import tqdm
 
 def get_div_text(balise, verbose=0):
 
     lignes = []
     if balise is not None:
-        for child in balise.findChildren():
+        for child in tqdm(balise.findChildren()):
             if "p" == child.name or "h2" == child.name:
                 if "pageliste" in child.get("class"):
                     # On sort de la boucle car nous sommes à la fin de l'article
@@ -64,7 +65,7 @@ def get_article(url, journal=None, verbose=0):
         # On parcours les balises enfant et on garde uniquement les 
         # <p>
         # <h2>
-        for child in art.findChildren():
+        for child in tqdm(art.findChildren()):
             if "div" == child.name and "ac-article-tag" == child.get("class"):
                 # p class="bodytext"
                 if tags is None:
@@ -117,7 +118,7 @@ def get_url_to_scrapt(nb_articles=100, verbose = 0):
 
     liste_urls =set()
         
-    for i in range(0, nb_page_to_proceed):
+    for i in tqdm(range(0, nb_page_to_proceed)):
         target = page_url.replace("1", str(i))
         if i == 0:
             target = base_url + "actualites/"
@@ -127,7 +128,7 @@ def get_url_to_scrapt(nb_articles=100, verbose = 0):
                 print("30 M. d'AMIS ==> Start processing : ", target)
 
             page = get_page(target)
-            for section in page.findAll('div', {'class': "tt-news"}):
+            for section in tqdm(page.findAll('div', {'class': "tt-news"})):
                 before = len(liste_urls)
 
                 liste_urls = get_page_links(section, base_url=base_url, liste_urls=liste_urls, verbose=verbose)
@@ -172,7 +173,7 @@ def get_articles(dao=None, nb_articles=100, exclude=None, journal="30 M. d'amis"
     if exclude is None:
         exclude = []
     excluded = 0
-    for url in articles_urls_to_scrapt:
+    for url in tqdm(articles_urls_to_scrapt):
         if url not in exclude:
             try:
 

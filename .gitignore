@@ -131,3 +131,6 @@ gestion_projet/.~lock.*.odt#
 *.exe
 .vscode/launch.json
 pre_trained_models/
+*.joblib
+*.pickle
+tfidf.pickle

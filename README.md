@@ -39,3 +39,6 @@ Note wordcloud‑1.8.1‑cp39‑cp39‑win_amd64.whl :
 cp39 => python 3.9
 cp310 => python 3.10
 ```
+
+## Code
+- Pré-processing des données [news_paper_nlp_pre_processing.ipynb](news_paper_nlp_pre_processing.ipynb)
